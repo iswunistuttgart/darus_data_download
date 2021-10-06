@@ -10,7 +10,7 @@ Use it to organize the uploaded data of multiple datasets locally on your comput
 2. Clone this repository to the place you need it. If it is a git repository add it as [submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules) via
    
    ```bash
-   git submodule add https://git.isw.uni-stuttgart.de/projekte/forschung/2020_dfg_slimorek/darus_data.git
+   git submodule add https://github.com/iswunistuttgart/darus_data_download.git
    ```
 
 3. Install required [pyDataverse](https://pydataverse.readthedocs.io/) packet by
@@ -55,8 +55,8 @@ For downloading two datasets
     "dataverse_url": "https://darus.uni-stuttgart.de/",
     "api_key": "d12e77cc-267a-11ec-9621-0242ac130002",
     "datasets": [
-        "doi:10.18419/darus-2177",
-        "doi:10.18419/darus-2178",
+        "doi:10.18419/darus-1234",
+        "doi:10.18419/darus-1235",
     ]
 }
 ```
