@@ -44,10 +44,10 @@ def slugify(value, allow_unicode=False):
 
 
 def create_config_template_if_needed() -> bool:
-    config_file = os.path.join(get_script_path(), 'config.json')
-    if not any([os.path.exists(os.path.join(config_dir, 'config.json')) for config_dir in get_search_dirs()]):
+    config_file = os.path.join(get_script_path(), 'darus_config.json')
+    if not any([os.path.exists(os.path.join(config_dir, 'darus_config.json')) for config_dir in get_search_dirs()]):
         print("No configuration file exists.")
-        with open(os.path.join(get_script_path,'config.json'), 'w') as cf:
+        with open(os.path.join(get_script_path(),'darus_config.json'), 'w') as cf:
             json.dump(config_template, cf, indent=4)
         print("Created a config template.\nRemember to fill in your dataset identifiers and crate a .darus_apikey file for your API key.")
         return True
@@ -69,7 +69,7 @@ def load_api_key_from_file():
 def load_config_from_file():
     config_txt = ""
     for d in get_search_dirs():
-        path = os.path.join(d, 'config.json')
+        path = os.path.join(d, 'darus_config.json')
         if os.path.exists(path):
             with open(path, 'r') as config_file:
                 config_txt = config_file.read()
