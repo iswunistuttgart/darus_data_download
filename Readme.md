@@ -1,8 +1,15 @@
 # DaRUS data retreiver
 
-Pull data from [DaRUS](https://darus.uni-stuttgart.de/), the DAta Repository of the University of Stuttgart, to a local folder with Python3.
+Pull data from [DaRUS](https://darus.uni-stuttgart.de/), the DAta Repository of the University of Stuttgart, to a local folder (`./data`) with Python3.
 
-Use it to organize the uploaded data of multiple datasets locally on your computer and to systematically integrate your open data in git repositories.
+Use it to organize the data of multiple datasets locally on your computer and to integrate your open data in git repositories.
+
+- [DaRUS data retreiver](#darus-data-retreiver)
+  - [How to get it running](#how-to-get-it-running)
+    - [Where does get_data.py look for config.json and .darus_apikey files?](#where-does-get_datapy-look-for-configjson-and-darus_apikey-files)
+  - [Example `config.json`](#example-configjson)
+  - [Direction/Future plans](#directionfuture-plans)
+  - [Contribute](#contribute)
 
 ## How to get it running
 
@@ -29,9 +36,10 @@ Use it to organize the uploaded data of multiple datasets locally on your comput
     python scripts/get_data.py
    ```
 
-5. If the dataset(s) you want to use are not (yet) public, then get your API Token on <https://darus.uni-stuttgart.de/dataverseuser.xhtml?selectTab=apiTokenTab> and fill it in `scripts/config.json`. Otherwise, leave the `'api_key'` field empty.
+5. If the dataset(s) you want to use are not (yet) public, then get your API Token on <https://darus.uni-stuttgart.de/dataverseuser.xhtml?selectTab=apiTokenTab> and fill it in a file named`.darus_apikey`. **Warning:** never check in your api_key via git! Within this repository it is added to .gitignore
 6. Configure the data to download in `scripts/config.json`. The doi of each dataset is in the format `doi:10.18419/darus-????` (find your own data on <https://darus.uni-stuttgart.de/dataverseuser.xhtml?selectTab=dataRelatedToMe>)
-7. Download/update all data by running
+7. If you are using this module as submodule: mov the `config.json` file to the directory above this repository and check it in with your parent git project to keep data configuration reproducible 
+8. Download/update all data by running
 
     ```bash
     python scripts/get_data.py
@@ -39,21 +47,20 @@ Use it to organize the uploaded data of multiple datasets locally on your comput
 
     The metadata is also downloaded as as `info.json` in each folder 
 
-## Directory structure
+### Where does get_data.py look for config.json and .darus_apikey files?
 
-```bash
-data/       # your data will appear here (in subfolders for each dataset) 
-scripts/    # scripts for getting the data and adding the directory to the search path.
-```
+1. in `./scripts/` (directory of `get_data.py`)
+2. in `./` (the parent directory, where `Readme.md` is located)
+3. in `../` (one directory above this project)
 
-## Example config.json
+
+## Example `config.json`
 
 For downloading two datasets
 
 ```json
 {
     "dataverse_url": "https://darus.uni-stuttgart.de/",
-    "api_key": "d12e77cc-267a-11ec-9621-0242ac130002",
     "datasets": [
         "doi:10.18419/darus-1234",
         "doi:10.18419/darus-1235",
@@ -63,7 +70,8 @@ For downloading two datasets
 
 ## Direction/Future plans
 
-- [ ] Make it more robust
+- [ ] Handle ENV variables(especially for API key) to use it in Docker, etc.
+- [ ] Make it more robust against failure/misconfiguration
 - [ ] Allow upload of files
 
 ## Contribute

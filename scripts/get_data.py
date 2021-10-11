@@ -5,6 +5,7 @@ import os
 import sys
 import unicodedata
 import re
+from typing import List
 
 from pyDataverse.api import DataAccessApi, NativeApi
 #from pyDataverse.models import Dataverse
@@ -12,13 +13,18 @@ from pyDataverse.models import Dataset
 from pyDataverse.exceptions import ApiAuthorizationError
 
 config_template = {"dataverse_url": "https://darus.uni-stuttgart.de/",
-    "api_key": "",
     "datasets": [
         "doi:10.18419/darus-????",
     ]}
 
 def get_script_path() -> str:
     return os.path.dirname(os.path.realpath(sys.argv[0]))
+
+def get_search_dirs() -> List[str]:
+    return [get_script_path(), 
+            os.path.join(get_script_path(), '..'), 
+            os.path.join(get_script_path(), '../..')]
+
 
 def slugify(value, allow_unicode=False):
     """
@@ -36,28 +42,49 @@ def slugify(value, allow_unicode=False):
     value = re.sub(r'[^\w\s-]', '', value.lower())
     return re.sub(r'[-\s]+', '-', value).strip('-_')
 
+
 def create_config_template_if_needed() -> bool:
     config_file = os.path.join(get_script_path(), 'config.json')
-    if not os.path.exists(config_file):
-        print("No confiugration file exists.")
-        with open(config_file, 'w') as cf:
+    if not any([os.path.exists(os.path.join(config_dir, 'config.json')) for config_dir in get_search_dirs()]):
+        print("No configuration file exists.")
+        with open(os.path.join(get_script_path,'config.json'), 'w') as cf:
             json.dump(config_template, cf, indent=4)
-        print("Created a config template.\nRemember to fill in your api key and dataset identifiers.")
+        print("Created a config template.\nRemember to fill in your dataset identifiers and crate a .darus_apikey file for your API key.")
         return True
     else:
         return False
+
+
+
+def load_api_key_from_file():
+    for d in get_search_dirs():
+        path = os.path.join(d, '.darus_apikey')
+        if os.path.exists(path):
+            with open(path, 'r') as key_file:
+                return key_file.read()
+
+    print('no file .darus_apikey found. Proceeding with public authentication.')
+    return None
+
+def load_config_from_file():
+    config_txt = ""
+    for d in get_search_dirs():
+        path = os.path.join(d, 'config.json')
+        if os.path.exists(path):
+            with open(path, 'r') as config_file:
+                config_txt = config_file.read()
+            break
+
+    return json.loads(config_txt)
+
 
 if __name__ == "__main__":
     if create_config_template_if_needed():
         exit(0)
 
-    with open(os.path.join(get_script_path(),'config.json'), 'r') as config_file:
-        config_txt = config_file.read()
+    config_obj = load_config_from_file()
+    api_key = load_api_key_from_file()
 
-    config_obj = json.loads(config_txt)
-    #print(json.dumps(config_obj, indent=4))
-
-    api_key = config_obj["api_key"]
     if api_key:
         api = NativeApi(config_obj["dataverse_url"], api_token=api_key)
         data_api = DataAccessApi(config_obj["dataverse_url"], api_token=api_key)
@@ -80,9 +107,9 @@ if __name__ == "__main__":
                         title = c['value']
                         break
                 folder_name  = slugify(title) # extract from JSON
-                folder = os.path.join(get_script_path(), '../data', folder_name)
+                folder = os.path.normpath(os.path.join(get_script_path(), '..', 'data', folder_name))
                 try:
-                    os.mkdir(folder)
+                    os.makedirs(folder)
                 except FileExistsError:
                     pass
 
