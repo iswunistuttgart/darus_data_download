@@ -6,8 +6,8 @@ Use it to organize the data of multiple datasets locally on your computer and to
 
 - [DaRUS data retreiver](#darus-data-retreiver)
   - [How to get it running](#how-to-get-it-running)
-    - [Where does get_data.py look for darus_config.json and .darus_apikey files?](#where-does-get_datapy-look-for-configjson-and-darus_apikey-files)
-  - [Example `darus_config.json`](#example-configjson)
+    - [Where does get_data.py look for darus_config.json and .darus_apikey files?](#where-does-get_datapy-look-for-darus_configjson-and-darus_apikey-files)
+  - [Example `darus_config.json`](#example-darus_configjson)
   - [Direction/Future plans](#directionfuture-plans)
   - [Contribute](#contribute)
 
@@ -38,7 +38,7 @@ Use it to organize the data of multiple datasets locally on your computer and to
 
 5. If the dataset(s) you want to use are not (yet) public, then get your API Token on <https://darus.uni-stuttgart.de/dataverseuser.xhtml?selectTab=apiTokenTab> and fill it in a file named`.darus_apikey`. **Warning:** never check in your api_key via git! Within this repository it is added to .gitignore
 6. Configure the data to download in `scripts/darus_config.json`. The doi of each dataset is in the format `doi:10.18419/darus-????` (find your own data on <https://darus.uni-stuttgart.de/dataverseuser.xhtml?selectTab=dataRelatedToMe>)
-7. If you are using this module as submodule: mov the `darus_config.json` file to the directory above this repository and check it in with your parent git project to keep data configuration reproducible 
+7. If you are using this module as submodule: move the `darus_config.json` file to the directory above this repository and check it in with your parent git project to keep data configuration reproducible 
 8. Download/update all data by running
 
     ```bash
