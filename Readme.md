@@ -72,7 +72,7 @@ For downloading two datasets
 
 - [ ] Handle ENV variables(especially for API key) to use it in Docker, etc.
 - [ ] Make it more robust against failure/misconfiguration
-- [ ] Allow upload of files
+- [ ] Allow upload of files (maybe use [pyDaRUS](https://github.com/JR-1991/pyDaRUS))
 
 ## Contribute
 
