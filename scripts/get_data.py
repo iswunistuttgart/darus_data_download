@@ -117,9 +117,15 @@ if __name__ == "__main__":
 
                 for file in files_list:
                     filename = file["dataFile"]["filename"]
+                    if 'directoryLabel' in file: #need if dataset has folderstructure
+                        folderpath = file["directoryLabel"]
+                    else:
+                        folderpath = ''
                     file_id = file["dataFile"]["id"]
                     response = data_api.get_datafile(file_id)
-                    with open( os.path.join(folder, filename), "wb") as f:
+                    fullpath = os.path.join(folder, folderpath, filename)
+                    os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+                    with open( fullpath, "wb") as f:
                         f.write(response.content)
 
                 with open( os.path.join(folder, 'info.json'), "w") as json_metadata_f:
