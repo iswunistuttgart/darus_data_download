@@ -108,6 +108,12 @@ if __name__ == "__main__":
                         break
                 folder_name  = slugify(title) # extract from JSON
                 folder = os.path.normpath(os.path.join(get_script_path(), '..', 'data', folder_name))
+                if os.path.exists(folder):
+                    download_data = input(
+                        f"The folder {folder} already exists. Do you want to download it again? (y/n)"
+                    )
+                    if download_data.lower() == "n":
+                        continue
                 os.makedirs(folder, exist_ok=True)
 
                 files_list = dataset_ref.json()['data']['latestVersion']['files']
