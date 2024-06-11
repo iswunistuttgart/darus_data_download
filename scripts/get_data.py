@@ -1,22 +1,19 @@
-from genericpath import exists
+import argparse
 import json
-from ntpath import join
+import logging
 import os
 import sys
 import unicodedata
 import re
 from typing import List
+import hashlib
+import requests
 
-from pyDataverse.api import DataAccessApi, NativeApi
-
-# from pyDataverse.models import Dataverse
-from pyDataverse.models import Dataset
-from pyDataverse.exceptions import ApiAuthorizationError
 
 config_template = {
     "dataverse_url": "https://darus.uni-stuttgart.de/",
     "datasets": [
-        "doi:10.18419/darus-????",
+        {"doi": "doi:10.18419/darus-????", "version": ":latest"}
     ],
 }
 
@@ -95,68 +92,136 @@ def load_config_from_file():
 
     return json.loads(config_txt)
 
+def get_headers(api_token:str|None=None):
+    headers = {}
+    if api_token and api_token != "":
+        headers["X-Dataverse-key"] = api_token
+    
+    return headers
 
+def get_dataset_info(dataset_obj : dict, config: dict, api_token: str|None = None):
+
+    # legacy:
+    if not isinstance(dataset_obj, dict):
+        logging.warn(f"""You are using the old format for darus_config.json, where only a doi is passed for each repository.
+The new version supports passing a version as well for reprducibility of results.
+Consider updating the darus_config.json, support for the old format will be removed in a future version.
+
+example:
+{config_template}
+""")
+        dataset_id = dataset_obj
+        dataset_version = "latest"
+    else:
+        dataset_id = dataset_obj["id"]
+        dataset_version = dataset_obj["version"]
+
+    if dataset_version in ["latest", "latest-published","draft"]:
+        dataset_version = ":" + dataset_version # prepend : as requested by DaRUS API, see https://guides.dataverse.org/en/6.2/api/dataaccess.html#download-by-dataset-by-version 
+
+    headers = get_headers(api_token)
+    return requests.get(f"{config_obj["dataverse_url"]}api/v1/datasets/:persistentId/versions/{dataset_version}/?persistentId=doi:{dataset_id.replace("doi:", "")}", headers=headers)
+
+def get_whole_dataset_zipped(dataset_id : str, config: dict, api_token: str|None = None):
+    # this is slow:
+    headers = get_headers(api_token)
+    return requests.get(f"{config_obj["dataverse_url"]}api/v1/access/dataset/:persistentId/versions/:latest/?persistentId=doi:{dataset_id.replace("doi:", "")}", headers=headers, timeout=999)
+
+def get_file(file_id:int, config: dict, api_token : str|None = None):
+    headers = get_headers(api_token)
+    return requests.get(f"{config_obj["dataverse_url"]}api/v1/access/datafile/{file_id}", headers=headers, timeout=None)
+
+
+def calcuate_md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(100*4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
+# main program:
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="get_data", description="downloads data from configured DaRUS repositories. See <https://github.com/iswunistuttgart/darus_data_download/blob/master/Readme.md>")
+    parser.add_argument(
+        "-log", 
+        "--log", 
+        default="warning",
+        help=(
+            "Provide logging level. "
+            "Example --log debug', default='warning'"),
+    )
+
+    options = parser.parse_args()
+    levels = {
+        'critical': logging.CRITICAL,
+        'error': logging.ERROR,
+        'warn': logging.WARNING,
+        'warning': logging.WARNING,
+        'info': logging.INFO,
+        'debug': logging.DEBUG
+    }
+    level = levels.get(options.log.lower())
+    if level is None:
+        level = logging.WARNING
+
+    logging.basicConfig(level=level)
+
     if create_config_template_if_needed():
         exit(0)
 
     config_obj = load_config_from_file()
     api_key = load_api_key_from_file()
 
-    if api_key:
-        api = NativeApi(config_obj["dataverse_url"], api_token=api_key)
-        data_api = DataAccessApi(config_obj["dataverse_url"], api_token=api_key)
-    else:  # no api key provided. assuming public dataset.
-        api = NativeApi(config_obj["dataverse_url"])
-        data_api = DataAccessApi(config_obj["dataverse_url"])
-
     for dataset_identifier in config_obj["datasets"]:
-        try:
-            dataset_ref = api.get_dataset(dataset_identifier)
-            # print(json.dumps(dataset_ref.json(), indent=4))
-            if dataset_ref.json()["status"] == "OK":
-                dataset = Dataset(dataset_ref.json()["data"])
-                # print(dataset.get()["title"])
+        dataset_resp = get_dataset_info(dataset_identifier, config_obj, api_key)
 
-                citation_info = dataset.get()["latestVersion"]["metadataBlocks"][
-                    "citation"
-                ]["fields"]
-                title = ""
-                for c in citation_info:
-                    if c["typeName"] == "title":
-                        title = c["value"]
-                        break
-                folder_name = slugify(title)  # extract from JSON
-                folder = os.path.normpath(
-                    os.path.join(get_script_path(), "..", "data", folder_name)
+        if dataset_resp.ok:
+
+            citation_info = dataset_resp.json()["data"]["metadataBlocks"]["citation"]["fields"]
+            dataset_title = ""
+            for c in citation_info:
+                if c["typeName"] == "title":
+                    dataset_title = c["value"]
+                    break
+
+            folder_name = slugify(dataset_title)  # extract from JSON
+            folder = os.path.normpath(
+                os.path.join(get_script_path(), "..", "data", folder_name)
+            )
+            if os.path.exists(folder):
+                download_data = input(
+                    f"The folder {folder} already exists. Do you want to download it again? (y/n)"
                 )
-                if os.path.exists(folder):
-                    download_data = input(
-                        f"The folder {folder} already exists. Do you want to download it again? (y/n)"
-                    )
-                    if download_data.lower() == "n":
-                        continue
-                os.makedirs(folder, exist_ok=True)
+                if download_data.lower() == "n":
+                    continue
+            os.makedirs(folder, exist_ok=True)
 
-                files_list = dataset_ref.json()["data"]["latestVersion"]["files"]
+            for file in dataset_resp.json()["data"]["files"]:
+                logging.info(f"Start downloading file: {file["dataFile"]}")
+                file_name = file["dataFile"]["filename"]
+                file_id = file["dataFile"]["id"]
+                file_md5 = file["dataFile"]["md5"]
+                subfolder = file["directoryLabel"] if "directoryLabel" in file.keys() else ""
 
-                for file in files_list:
-                    filename = file["dataFile"]["filename"]
-                    if "directoryLabel" in file:  # need if dataset has folderstructure
-                        folderpath = file["directoryLabel"]
-                    else:
-                        folderpath = ""
-                    file_id = file["dataFile"]["id"]
-                    response = data_api.get_datafile(file_id)
-                    fullpath = os.path.join(folder, folderpath, filename)
+                fullpath = os.path.join(folder, subfolder, file_name)
+
+                if os.path.exists(file_name) and os.path.isfile(file_name) and calcuate_md5(file_name)==file_md5: # early abort for matching md5
+                    logging.info("File `{file_name}` is up to date according to md5.")
+                    continue
+                
+                file_resp = get_file(file_id, config_obj, api_key)
+                if file_resp.ok:
                     os.makedirs(os.path.dirname(fullpath), exist_ok=True)
-                    with open(fullpath, "wb") as f:
-                        f.write(response.content)
 
-                with open(os.path.join(folder, "info.json"), "w") as json_metadata_f:
-                    metadata = dataset_ref.json()["data"]
+                    with open(fullpath, "wb") as f:
+                            f.write(file_resp.content)
+                else:
+                    logging.warn(file_resp.text)
+
+            with open(os.path.join(folder, "info.json"), "w") as json_metadata_f:
+                    metadata = dataset_resp.json()["data"]
                     json.dump(metadata, json_metadata_f, indent=4)
-        except ApiAuthorizationError as e:
-            no_key_given = "" if api_key else "without API key"
-            print("Cannot access data with id:", dataset_identifier, no_key_given, ".")
-            print(e)
+
+        else:
+            logging.warn()

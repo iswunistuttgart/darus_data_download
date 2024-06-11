@@ -1,13 +1,14 @@
 # DaRUS data retreiver
 
-Pull data from [DaRUS](https://darus.uni-stuttgart.de/), the DAta Repository of the University of Stuttgart, to a local folder (`./data`) with Python3.
+Pull data from [DaRUS](https://darus.uni-stuttgart.de/), the Data Repository of the University of Stuttgart, to a local folder (`./data`) with Python3.
 
 Use it to organize the data of multiple datasets locally on your computer and to integrate your open data in git repositories.
 
 - [DaRUS data retreiver](#darus-data-retreiver)
   - [How to get it running](#how-to-get-it-running)
-    - [Where does get_data.py look for darus_config.json and .darus_apikey files?](#where-does-get_datapy-look-for-darus_configjson-and-darus_apikey-files)
+    - [Where does get\_data.py look for darus\_config.json and .darus\_apikey files?](#where-does-get_datapy-look-for-darus_configjson-and-darus_apikey-files)
   - [Example `darus_config.json`](#example-darus_configjson)
+    - [A quick note about versions:](#a-quick-note-about-versions)
   - [Direction/Future plans](#directionfuture-plans)
   - [Contribute](#contribute)
 
@@ -20,17 +21,14 @@ Use it to organize the data of multiple datasets locally on your computer and to
    git submodule add https://github.com/iswunistuttgart/darus_data_download.git
    ```
 
-3. Install required [pyDataverse](https://pydataverse.readthedocs.io/) packet by
+3. Install required package requests (to make HTTP requests to the REST API):
    
     ```bash
     # cd to directory of this repository, then:
     pip install --user -r requirements.txt
-
-    # or install directly:
-    pip install --user pyDataverse
     ```
 
-4. Create the configuration file (`scripts/config.txt`) template by running
+4. Create the configuration file (`scripts/darus_config.json`) template by running
 
    ```bash
     python scripts/get_data.py
@@ -62,17 +60,24 @@ For downloading two datasets
 {
     "dataverse_url": "https://darus.uni-stuttgart.de/",
     "datasets": [
-        "doi:10.18419/darus-1234",
-        "doi:10.18419/darus-1235",
+        {"id": "doi:10.18419/darus-1234", "version": "latest"},
+        {"id": "doi:10.18419/darus-1235", "version": "2.0"}
     ]
 }
 ```
+
+### A quick note about versions:
+
+To have reproducible results you should refer to a fixed version after the repository was published. Otherwise the data may change on repository updates.
+
+Latest (`"version": "latest"`) is the default setting, will also use unpublished versions. You can also use a version number or any string of the version descriptions given [here](https://guides.dataverse.org/en/6.2/api/dataaccess.html#download-by-dataset-by-version)
 
 ## Direction/Future plans
 
 - [ ] Handle ENV variables(especially for API key) to use it in Docker, etc.
 - [ ] Make it more robust against failure/misconfiguration
 - [ ] Allow upload of files (maybe use [pyDaRUS](https://github.com/JR-1991/pyDaRUS))
+- [x] Allow specifying version
 
 ## Contribute
 

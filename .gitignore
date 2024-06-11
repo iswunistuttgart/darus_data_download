@@ -1,3 +1,10 @@
+# never check in your private apikey
 .darus_apikey
+
+# store your config in the parent repository to keep it persistent
 darus_config.json
+
+# data is not checked in (can be downloaded reproducibly)
 data
+
+.venv
