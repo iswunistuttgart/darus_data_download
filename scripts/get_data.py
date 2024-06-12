@@ -13,7 +13,7 @@ import requests
 config_template = {
     "dataverse_url": "https://darus.uni-stuttgart.de/",
     "datasets": [
-        {"doi": "doi:10.18419/darus-????", "version": ":latest"}
+        {"id": "doi:10.18419/darus-????", "version": ":latest"}
     ],
 }
 
