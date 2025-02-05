@@ -120,16 +120,16 @@ example:
         dataset_version = ":" + dataset_version # prepend : as requested by DaRUS API, see https://guides.dataverse.org/en/6.2/api/dataaccess.html#download-by-dataset-by-version 
 
     headers = get_headers(api_token)
-    return requests.get(f"{config_obj["dataverse_url"]}api/v1/datasets/:persistentId/versions/{dataset_version}/?persistentId=doi:{dataset_id.replace("doi:", "")}", headers=headers)
+    return requests.get(f"{config_obj['dataverse_url']}api/v1/datasets/:persistentId/versions/{dataset_version}/?persistentId=doi:{dataset_id.replace('doi:', '')}", headers=headers)
 
 def get_whole_dataset_zipped(dataset_id : str, config: dict, api_token: str|None = None):
     # this is slow:
     headers = get_headers(api_token)
-    return requests.get(f"{config_obj["dataverse_url"]}api/v1/access/dataset/:persistentId/versions/:latest/?persistentId=doi:{dataset_id.replace("doi:", "")}", headers=headers, timeout=999)
+    return requests.get(f"{config_obj['dataverse_url']}api/v1/access/dataset/:persistentId/versions/:latest/?persistentId=doi:{dataset_id.replace('doi:', '')}", headers=headers, timeout=999)
 
 def get_file(file_id:int, config: dict, api_token : str|None = None):
     headers = get_headers(api_token)
-    return requests.get(f"{config_obj["dataverse_url"]}api/v1/access/datafile/{file_id}", headers=headers, timeout=None)
+    return requests.get(f"{config_obj['dataverse_url']}api/v1/access/datafile/{file_id}", headers=headers, timeout=None)
 
 
 def calcuate_md5(fname):
@@ -198,7 +198,7 @@ if __name__ == "__main__":
             os.makedirs(folder, exist_ok=True)
 
             for file in dataset_resp.json()["data"]["files"]:
-                logging.info(f"Start downloading file: {file["dataFile"]}")
+                logging.info(f"Start downloading file: {file['dataFile']}")
                 file_name = file["dataFile"]["filename"]
                 file_id = file["dataFile"]["id"]
                 file_md5 = file["dataFile"]["md5"]
