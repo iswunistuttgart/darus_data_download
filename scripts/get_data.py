@@ -224,4 +224,4 @@ if __name__ == "__main__":
                     json.dump(metadata, json_metadata_f, indent=4)
 
         else:
-            logging.warn()
+            logging.error("Failed to download dataset: %s", dataset_resp.text)
